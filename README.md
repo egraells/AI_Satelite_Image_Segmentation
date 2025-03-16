@@ -34,8 +34,6 @@ Sentinel-2 provides multispectral images with 13 spectral bands ranging from the
 The images produced by Sentinel-2 are captured at different spatial resolutions, and in this project in concret I used:
 - 10-meter resolution: multi-bands, where each band represents information about a color Red, Green, Blue, and other information as Infrared known as NIR bands.
 
-![Multiband geoftiff](resultats/multiband_geotiff.jpg)
-
 By utilizing Sentinel-2 images, this project enables cost-effective, automated land cover classification, drastically reducing the need for expensive manual labeling and high-cost aerial photography.
 
 ### Project Goal
@@ -133,7 +131,6 @@ To find the optimal tile size, three different tiling resolutions were tested:
 | 1000 × 1000 | 900 tiles       | FeIr tiles to store and process | Large file sizes, harder to fit into GPU memory | |
 | 512 × 512	  | 3,400 tiles	| Compatible with standard CNN architectures | More storage requwered, longer preprocessing time |   |
 | 300 × 300   | 10,000 tiles	| Best balance betIen tile count and GPU efficiency | Higher storage requwerements
-|   |
 
 
 After testing, 300 × 300 pixel tiles should be chosen, even the code in this Repo is based on 1000x1000 initial approach:
@@ -310,53 +307,11 @@ I used IoU to measure the segmentation accuracy per class. IoU measures how much
 It reduces the impact of class imbalance by considering false positives and false negatives.
 Great for analyzing segmentation quality on an individual class level.
 
-This is the function used in our code to calculate the IoU:
-```python
-def calculate_iou(pred, target, num_classes):
-    iou_list = []
-    for cls in range(1, num_classes):  # Ignoring class 0
-        pred_inds = pred == cls
-        target_inds = target == cls
-        intersection = (pred_inds & target_inds).sum().item()
-        union = (pred_inds | target_inds).sum().item()
-        if union == 0:
-            iou_list.append(float('nan'))  # If no ground truth, do not include in IoU calculation
-        else:
-            iou_list.append(intersection / union)
-    return iou_list
-```
-
 #### Dice Coefficinet (F-1 Score for Segmentation) 
 I used to grab a better sense of how Ill small regions are segmented, as it balances precision and recall. This is useful as our dataset is imbalanced: e.g.,  urban areas are much loIr compared to vegetation and forest.
 
-This is the function used in our code to calculate the Dice Coefficient:
-
-```python
-def calculate_dice(pred, target, num_classes):
-    dice_list = []
-    for cls in range(1, num_classes):  # Ignoring class 0
-        pred_inds = pred == cls
-        target_inds = target == cls
-        intersection = (pred_inds & target_inds).sum().item()
-        denominator = pred_inds.sum().item() + target_inds.sum().item()
-        if denominator == 0: # To avoid division by zero
-            dice = 0
-        else:
-            dice = (2 * intersection) / denominator
-        dice_list.append(dice)
-    return dice_list
-```
-
 ### Model Checkpointing 
 I used for saving the best-performing model, ensuring that progress is not lost due to interruptions or poor performance in later epochs.
-
-```python
-if epoch_loss < best_loss:
-    best_loss = epoch_loss
-    name = f"model_{epoch}_{epoch_loss:.4f}.pth"
-    torch.save(model.state_dict(), name)
-    print(f"Mejor modelo guardado con Loss: {epoch_loss:.4f}")
-```
 
 ## Lessons learnt and future work
 
